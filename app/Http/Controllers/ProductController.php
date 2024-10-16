@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ProductStoreRequest;
+use App\Models\Product;
+use App\Models\ProductColor;
+use App\Models\ProductImage;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -11,7 +15,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+        return view('admin.dashboard');
     }
 
     /**
@@ -25,9 +29,53 @@ class ProductController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(ProductStoreRequest $request)
     {
-        dd($request->all());
+        // dd($request->all());
+        $product = new Product();
+
+        //store images
+        if($request->hasFile('image')){
+            //store image
+            $image = $request->file('image');
+            $fileName = $image->store('','public');
+            $filePath = 'uploads/'.$fileName;
+
+            $product->image = $filePath;
+        }
+
+        $product->name = $request->name;
+        $product->price = $request->price;
+        $product->short_description = $request->short_description;
+        $product->qty = $request->qty;
+        $product->sku = $request->sku;
+        $product->description = $request->description;
+        $product->save();
+
+        //insert colors
+        if($request->has('colors') && $request->filled('colors')){
+            foreach($request->colors as $color){
+                ProductColor::create([
+                    'product_id'=>$product->id,
+                    'name'=>$color
+                ]);
+            }
+        }
+
+        //store images
+        if($request->hasFile('images')){
+            foreach($request->file('images') as $image){
+                //store image
+                $fileName = $image->store('', 'public');
+                $filePath = 'uploads/'.$fileName;
+                ProductImage::create([
+                    'product_id'=>$product->id,
+                    'path'=>$filePath
+                ]);
+            }
+        }
+
+
     }
 
     /**
